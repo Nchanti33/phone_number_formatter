@@ -26,10 +26,10 @@ function splitNumbersByNonNumeric(input: string): string[] {
       lastWasSeparator = false;
     } else {
       // Check if this non-numeric character could be a separator
-      const beforeDigits = countDigits(currentNumber);
-      const afterDigits = countDigits(input.slice(i + 1));
+      const beforeNumber = extractLocalNumber(currentNumber);
+      const afterNumber = extractLocalNumber(input.slice(i + 1));
       
-      if (beforeDigits >= 7 && beforeDigits <= 13 && afterDigits >= 7 && afterDigits <= 13) {
+      if (isValidLength(beforeNumber) && isValidLength(afterNumber)) {
         if (currentNumber) {
           numbers.push(currentNumber);
         }
@@ -49,8 +49,29 @@ function splitNumbersByNonNumeric(input: string): string[] {
   return numbers.length > 0 ? numbers : [input];
 }
 
-function countDigits(str: string): number {
-  return (str.match(/\d/g) || []).length;
+function isValidLength(number: string): boolean {
+  return number.length >= 7 && number.length <= 8;
+}
+
+function extractLocalNumber(str: string): string {
+  const cleaned = str.replace(/[^\d+]/g, '');
+  
+  // Remove international prefix if present
+  if (cleaned.startsWith('00961')) {
+    return cleaned.slice(5);
+  }
+  if (cleaned.startsWith('+961')) {
+    return cleaned.slice(4);
+  }
+  if (cleaned.startsWith('961')) {
+    return cleaned.slice(3);
+  }
+  // Handle numbers with potential random digit in international prefix (00X961)
+  if (cleaned.length >= 6 && cleaned.startsWith('00') && cleaned.substring(3, 6) === '961') {
+    return cleaned.slice(6);
+  }
+  
+  return cleaned;
 }
 
 function processNumber(cleaned: string, id: number, inputId: number, rawInput: string, originalNumber: string): PhoneNumber {
